@@ -1,6 +1,5 @@
--- Arquivos de depend?ncia (Constantes e Utilit?rios)
-dofile("./AI/Const.lua")
-dofile("./AI/Util.lua")
+dofile("./AI/USER_AI/Const.lua")
+dofile("./AI/USER_AI/Util.lua")
 
 -----------------------------
 -- Estados da IA
@@ -624,12 +623,11 @@ function	GetMyEnemy (myid)
 	local result = 0
 
 	local type = GetV (V_HOMUNTYPE,myid)
-	-- Hom?nculos N?o-Agressivos (passivos, s? atacam se atacados)
-	if (EVERYBODY_AGRESSIVE ~= 1) and (type == LIF or type == LIF_H or type == AMISTR or type == AMISTR_H or type == LIF2 or type == LIF_H2 or type == AMISTR2 or type == AMISTR_H2) then
-		result = GetMyEnemyA (myid)
 	-- Hom?nculos Agressivos (atacam por conta pr?pria)
-	elseif (EVERYBODY_AGRESSIVE == 1) or (type == FILIR or type == FILIR_H or type == VANILMIRTH or type == VANILMIRTH_H or type == FILIR2 or type == FILIR_H2 or type == VANILMIRTH2 or type == VANILMIRTH_H2) then
-		result = GetMyEnemyB (myid)
+	if (EVERYBODY_AGRESSIVE == 1) or (type == FILIR or type == FILIR_H or type == VANILMIRTH or type == VANILMIRTH_H or type == FILIR2 or type == FILIR_H2 or type == VANILMIRTH2 or type == VANILMIRTH_H2) then
+		result = GetMyEnemy (myid)
+	else
+		result = GetMyEnemyNotAgressive (myid)
 	end
 	return result
 end
@@ -639,7 +637,7 @@ end
 -------------------------------------------
 --  MODIFICADO: GetMyEnemy para hom?nculos N?o-Agressivos
 -------------------------------------------
-function	GetMyEnemyA (myid)
+function	GetMyEnemyNotAgressive (myid)
 	local result = 0
 	local owner  = GetV (V_OWNER,myid)
 	local actors = GetActors ()
@@ -667,7 +665,7 @@ end
 -------------------------------------------
 --  MODIFICADO: GetMyEnemy para hom?nculos Agressivos (com Anti-KS e Prioridade)
 -------------------------------------------
-function	GetMyEnemyB (myid)
+function	GetMyEnemy (myid)
 	local owner  = GetV(V_OWNER, myid)
 	local actors = GetActors()
 
