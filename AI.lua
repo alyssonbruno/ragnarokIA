@@ -628,7 +628,7 @@ function	GetMyEnemy (myid)
 	if (EVERYBODY_AGRESSIVE ~= 1) and (type == LIF or type == LIF_H or type == AMISTR or type == AMISTR_H or type == LIF2 or type == LIF_H2 or type == AMISTR2 or type == AMISTR_H2) then
 		result = GetMyEnemyA (myid)
 	-- Hom?nculos Agressivos (atacam por conta pr?pria)
-	elseif (EVERYBODY_AGRESSIVE==1) or (type == FILIR or type == FILIR_H or type == VANILMIRTH or type == VANILMIRTH_H or type == FILIR2 or type == FILIR_H2 or type == VANILMIRTH2 or type == VANILMIRTH_H2) then
+	elseif (EVERYBODY_AGRESSIVE == 1) or (type == FILIR or type == FILIR_H or type == VANILMIRTH or type == VANILMIRTH_H or type == FILIR2 or type == FILIR_H2 or type == VANILMIRTH2 or type == VANILMIRTH_H2) then
 		result = GetMyEnemyB (myid)
 	end
 	return result
