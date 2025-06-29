@@ -14,7 +14,7 @@ function	GetMsg (id) end
 function	GetResMsg (id) end
 function	SkillObject (id,level,skill,target) end
 function	SkillGround (id,level,skill,x,y) end
-function	IsMonster (id) end								-- id�� �����ΰ�? yes -> 1 no -> 0
+function	IsMonster (id) end								-- id는 몬스터인가? yes -> 1 no -> 0
 
 --]]
 
@@ -28,21 +28,21 @@ function	IsMonster (id) end								-- id�� �����ΰ�? yes -> 1 no -> 0
 
 
 --------------------------------
-V_OWNER				=	0		-- ������ ID			
-V_POSITION			=	1		-- ��ü�� ��ġ 
-V_TYPE				=	2		-- �̱��� 
-V_MOTION			=	3		-- ���� 
-V_ATTACKRANGE		=	4		-- ���� ���� ���� 
-V_TARGET			=   5		-- ����, ��ų ��� ��ǥ�� ID 
-V_SKILLATTACKRANGE	=	6		-- ��ų ��� ���� 
-V_HOMUNTYPE			=   7		-- ȣ��Ŭ�罺 ����
-V_HP				=	8		-- HP (ȣ��Ŭ�罺�� ���ο��Ը� ����)
-V_SP				=	9		-- SP (ȣ��Ŭ�罺�� ���ο��Ը� ����)
-V_MAXHP				=   10		-- �ִ� HP (ȣ��Ŭ�罺�� ���ο��Ը� ����)
-V_MAXSP				=   11		-- �ִ� SP (ȣ��Ŭ�罺�� ���ο��Ը� ����)
-V_MERTYPE		  =		12    -- �뺴 ����	
-V_POSITION_APPLY_SKILLATTACKRANGE = 13	-- SkillAttackange�� ������ ��ġ
-V_SKILLATTACKRANGE_LEVEL = 14	-- ���� �� SkillAttackange
+V_OWNER				=	0		-- 주인의 ID			
+V_POSITION			=	1		-- 물체의 위치 
+V_TYPE				=	2		-- 미구현 
+V_MOTION			=	3		-- 동작 
+V_ATTACKRANGE		=	4		-- 물리 공격 범위 
+V_TARGET			=   5		-- 공격, 스킬 사용 목표물 ID 
+V_SKILLATTACKRANGE	=	6		-- 스킬 사용 범위 
+V_HOMUNTYPE			=   7		-- 호문클루스 종류
+V_HP				=	8		-- HP (호문클루스와 주인에게만 적용)
+V_SP				=	9		-- SP (호문클루스와 주인에게만 적용)
+V_MAXHP				=   10		-- 최대 HP (호문클루스와 주인에게만 적용)
+V_MAXSP				=   11		-- 최대 SP (호문클루스와 주인에게만 적용)
+V_MERTYPE		  =		12    -- 용병 종류	
+V_POSITION_APPLY_SKILLATTACKRANGE = 13	-- SkillAttackange를 적용한 위치
+V_SKILLATTACKRANGE_LEVEL = 14	-- 레벨 별 SkillAttackange
 ---------------------------------	
 
 
@@ -50,7 +50,7 @@ V_SKILLATTACKRANGE_LEVEL = 14	-- ���� �� SkillAttackange
 
 
 --------------------------------------------
--- ȣ��Ŭ�罺 ���� 
+-- 호문클루스 종류 
 --------------------------------------------
 
 LIF				= 1
@@ -75,7 +75,7 @@ VANILMIRTH_H2	= 16
 
 
 --------------------------------------------
--- �뺴 ���� 
+-- 용병 종류 
 --------------------------------------------
 ARCHER01	= 1		
 ARCHER02	= 2			
@@ -139,34 +139,35 @@ FOLLOW_CMD			= 9
 
 
 
---[[ ���ɾ� ���� 
+--[[ 명령어 구조 
 
 MOVE_CMD
-	{���ɹ�ȣ,X��ǥ,Y��ǥ}
+	{명령번호,X좌표,Y좌표}
 	  
 STOP_CMD
-	{���ɹ�ȣ}
+	{명령번호}
 
 ATTACK_OBJECT_CMD
-	{���ɹ�ȣ,��ǥID}
+	{명령번호,목표ID}
 
 ATTACK_AREA_CMD	
-	{���ɹ�ȣ,X��ǥ,Y��ǥ}
+	{명령번호,X좌표,Y좌표}
 
 PATROL_CMD	
-	{���ɹ�ȣ,X��ǥ,Y��ǥ}
+	{명령번호,X좌표,Y좌표}
 	
 HOLD_CMD
-	{���ɹ�ȣ}
+	{명령번호}
 
 SKILL_OBJECT_CMD
-	{���ɹ�ȣ,���÷���,����,��ǥID}
+	{명령번호,선택레벨,종류,목표ID}
 
 SKILL_AREA_CMD
-	{���ɹ�ȣ,���÷���,����,X��ǥ,Y��ǥ}
+	{명령번호,선택레벨,종류,X좌표,Y좌표}
 
 FOLLOW_CMD
-	{���ɹ�ȣ}
+	{명령번호}
 
 --]]
 
+EVERYBODY_AGRESSIVE=1
