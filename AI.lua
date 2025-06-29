@@ -1,57 +1,78 @@
-
+-- Arquivos de depend?ncia (Constantes e Utilit?rios)
 dofile("./AI/Const.lua")
 dofile("./AI/Util.lua")
 
 -----------------------------
--- state
+-- Estados da IA
 -----------------------------
-IDLE_ST					= 0
-FOLLOW_ST				= 1
-CHASE_ST				= 2
-ATTACK_ST				= 3
-MOVE_CMD_ST				= 4
-STOP_CMD_ST				= 5
-ATTACK_OBJECT_CMD_ST			= 6
-ATTACK_AREA_CMD_ST			= 7
-PATROL_CMD_ST				= 8
-HOLD_CMD_ST				= 9
-SKILL_OBJECT_CMD_ST			= 10
-SKILL_AREA_CMD_ST			= 11
-FOLLOW_CMD_ST				= 12
+IDLE_ST					= 0  -- Ocioso
+FOLLOW_ST				= 1  -- Seguindo
+CHASE_ST				= 2  -- Perseguindo
+ATTACK_ST				= 3  -- Atacando
+MOVE_CMD_ST				= 4  -- Comando de Mover
+STOP_CMD_ST				= 5  -- Comando de Parar
+ATTACK_OBJECT_CMD_ST	= 6  -- Comando de Atacar Alvo
+ATTACK_AREA_CMD_ST		= 7  -- Comando de Atacar ?rea
+PATROL_CMD_ST			= 8  -- Comando de Patrulhar
+HOLD_CMD_ST				= 9  -- Comando de Manter Posi??o
+SKILL_OBJECT_CMD_ST		= 10 -- Comando de Usar Habilidade em Alvo
+SKILL_AREA_CMD_ST		= 11 -- Comando de Usar Habilidade em ?rea
+FOLLOW_CMD_ST			= 12 -- Comando de Seguir
 ----------------------------
 
 
 ------------------------------------------
--- global variable
+-- Vari?veis Globais
 ------------------------------------------
-MyState				= IDLE_ST	-- 최초의 상태는 휴식
-MyEnemy				= 0		-- 적 id
-MyDestX				= 0		-- 목적지 x
-MyDestY				= 0		-- 목적지 y
-MyPatrolX			= 0		-- 정찰 목적지 x
-MyPatrolY			= 0		-- 정찰 목적지 y
-ResCmdList			= List.new()	-- 예약 명령어 리스트 
-MyID				= 0		-- 호문클루스 id
-MySkill				= 0		-- 호문클루스의 스킬
-MySkillLevel		= 0		-- 호문클루스의 스킬 레벨
+MyState				= IDLE_ST	-- O estado inicial ? ocioso
+MyEnemy				= 0		-- ID do inimigo
+MyDestX				= 0		-- Coordenada X de destino
+MyDestY				= 0		-- Coordenada Y de destino
+MyPatrolX			= 0		-- Coordenada X de destino da patrulha
+MyPatrolY			= 0		-- Coordenada Y de destino da patrulha
+ResCmdList			= List.new()	-- Lista de comandos reservados (enfileirados)
+MyID				= 0		-- ID do hom?nculo
+MySkill				= 0		-- Habilidade do hom?nculo a ser usada
+MySkillLevel		= 0		-- N?vel da habilidade do hom?nculo
 ------------------------------------------
 
+---------------------------------------------------
+-- NOVA IMPLEMENTA??O: Tabelas de Prioridade de Alvos
+---------------------------------------------------
+-- Preencha as tabelas abaixo com os IDs dos monstros.
+-- O hom?nculo ir? procurar primeiro na tabela 'prioritario', depois na 'normal', e por ?ltimo na 'ultimo_caso'.
+-- NOTA: Assumindo que GetV(V_TYPE, id) retorna o ID do tipo do monstro. Se for por nome, a l?gica precisa ser adaptada.
+TARGET_PRIORITY = {
+    prioritario = { 
+        -- Ex: {1002, 1004} -- Monstros de alta prioridade (MVPs, etc.)
+    },
+    normal = {
+        -- Ex: {1096, 1115} -- Monstros comuns que voc? deseja farmar
+    },
+    ultimo_caso = {
+        -- Ex: {1272} -- Monstros de baixa prioridade (fracos, etc.)
+    }
+}
+---------------------------------------------------
 
-------------- command process  ---------------------
+
+------------- Processamento de Comandos ---------------------
 
 function	OnMOVE_CMD (x,y)
 	
 	TraceAI ("OnMOVE_CMD")
 
+	-- Se o destino for o mesmo para o qual j? est? se movendo, n?o processa novamente.
 	if ( x == MyDestX and y == MyDestY and MOTION_MOVE == GetV(V_MOTION,MyID)) then
-		return		-- 현재 이동중인 목적지와 같은 곳이면 처리하지 않는다. 
+		return
 	end
 
 	local curX, curY = GetV (V_POSITION,MyID)
-	if (math.abs(x-curX)+math.abs(y-curY) > 15) then		-- 목적지가 일정 거리 이상이면 (서버에서 먼거리는 처리하지 않기 때문에)
-		List.pushleft (ResCmdList,{MOVE_CMD,x,y})			-- 원래 목적지로의 이동을 예약한다. 	
-		x = math.floor((x+curX)/2)							-- 중간지점으로 먼저 이동한다.  
-		y = math.floor((y+curY)/2)							-- 
+	-- Se o destino estiver al?m de uma certa dist?ncia (porque o servidor n?o processa movimentos muito longos de uma vez)
+	if (math.abs(x-curX)+math.abs(y-curY) > 15) then
+		List.pushleft (ResCmdList,{MOVE_CMD,x,y}) -- Adiciona o movimento para o destino original ? fila.
+		x = math.floor((x+curX)/2)               -- Move-se primeiro para um ponto intermedi?rio.
+		y = math.floor((y+curY)/2)               --
 	end
 
 	Move (MyID,x,y)	
@@ -168,7 +189,7 @@ end
 
 function	OnFOLLOW_CMD ()
 
-	-- 대기명령은 대기상태와 휴식상태를 서로 전환시킨다. 
+	-- O comando de seguir alterna entre o estado de seguir e o estado ocioso.
 	if (MyState ~= FOLLOW_CMD_ST) then
 		MoveToOwner (MyID)
 		MyState = FOLLOW_CMD_ST
@@ -222,7 +243,7 @@ end
 
 
 
--------------- state process  --------------------
+-------------- Processamento de Estados --------------------
 
 
 function	OnIDLE_ST ()
@@ -231,28 +252,28 @@ function	OnIDLE_ST ()
 
 	local cmd = List.popleft(ResCmdList)
 	if (cmd ~= nil) then		
-		ProcessCommand (cmd)	-- 예약 명령어 처리 
+		ProcessCommand (cmd)	-- Processa comandos enfileirados
 		return 
 	end
 
 	local	object = GetOwnerEnemy (MyID)
-	if (object ~= 0) then							-- MYOWNER_ATTACKED_IN
+	if (object ~= 0) then							-- Se o mestre foi atacado
 		MyState = CHASE_ST
 		MyEnemy = object
-		TraceAI ("IDLE_ST -> CHASE_ST : MYOWNER_ATTACKED_IN")
+		TraceAI ("IDLE_ST -> CHASE_ST : MESTRE_ATACADO")
 		return 
 	end
 
 	object = GetMyEnemy (MyID)
-	if (object ~= 0) then							-- ATTACKED_IN
+	if (object ~= 0) then							-- Se o hom?nculo foi atacado ou encontrou um alvo
 		MyState = CHASE_ST
 		MyEnemy = object
-		TraceAI ("IDLE_ST -> CHASE_ST : ATTACKED_IN")
+		TraceAI ("IDLE_ST -> CHASE_ST : ATACADO_OU_ALVO_ENCONTRADO")
 		return
 	end
 
 	local distance = GetDistanceFromOwner(MyID)
-	if ( distance > 3 or distance == -1) then		-- MYOWNER_OUTSIGNT_IN
+	if ( distance > 3 or distance == -1) then		-- Se o mestre estiver longe
 		MyState = FOLLOW_ST
 		TraceAI ("IDLE_ST -> FOLLOW_ST")
 		return
@@ -266,9 +287,9 @@ function	OnFOLLOW_ST ()
 
 	TraceAI ("OnFOLLOW_ST")
 
-	if (GetDistanceFromOwner(MyID) <= 3) then		--  DESTINATION_ARRIVED_IN 
+	if (GetDistanceFromOwner(MyID) <= 3) then		-- Chegou ao destino (perto do mestre)
 		MyState = IDLE_ST
-		TraceAI ("FOLLOW_ST -> IDLW_ST")
+		TraceAI ("FOLLOW_ST -> IDLE_ST")
 		return
 	elseif (GetV(V_MOTION,MyID) == MOTION_STAND) then
 		MoveToOwner (MyID)
@@ -284,24 +305,24 @@ function	OnCHASE_ST ()
 
 	TraceAI ("OnCHASE_ST")
 
-	if (true == IsOutOfSight(MyID,MyEnemy)) then	-- ENEMY_OUTSIGHT_IN
+	if (true == IsOutOfSight(MyID,MyEnemy)) then	-- Inimigo fora de vis?o
 		MyState = IDLE_ST
 		MyEnemy = 0
 		MyDestX, MyDestY = 0,0
-		TraceAI ("CHASE_ST -> IDLE_ST : ENEMY_OUTSIGHT_IN")
+		TraceAI ("CHASE_ST -> IDLE_ST : INIMIGO_FORA_DE_VISAO")
 		return
 	end
-	if (true == IsInAttackSight(MyID,MyEnemy)) then  -- ENEMY_INATTACKSIGHT_IN
+	if (true == IsInAttackSight(MyID,MyEnemy)) then  -- Inimigo em alcance de ataque
 		MyState = ATTACK_ST
-		TraceAI ("CHASE_ST -> ATTACK_ST : ENEMY_INATTACKSIGHT_IN")
+		TraceAI ("CHASE_ST -> ATTACK_ST : INIMIGO_NO_ALCANCE")
 		return
 	end
 
 	local x, y = GetV (V_POSITION_APPLY_SKILLATTACKRANGE, MyEnemy, MySkill, MySkillLevel)
-	if (MyDestX ~= x or MyDestY ~= y) then			-- DESTCHANGED_IN
+	if (MyDestX ~= x or MyDestY ~= y) then			-- O destino mudou (inimigo se moveu)
 		MyDestX, MyDestY = GetV (V_POSITION_APPLY_SKILLATTACKRANGE, MyEnemy, MySkill, MySkillLevel)
 		Move (MyID,MyDestX,MyDestY)
-		TraceAI ("CHASE_ST -> CHASE_ST : DESTCHANGED_IN")
+		TraceAI ("CHASE_ST -> CHASE_ST : DESTINO_MUDOU")
 		return
 	end
 
@@ -313,23 +334,23 @@ function	OnATTACK_ST ()
 
 	TraceAI ("OnATTACK_ST")
 	
-	if (true == IsOutOfSight(MyID,MyEnemy)) then	-- ENEMY_OUTSIGHT_IN
+	if (true == IsOutOfSight(MyID,MyEnemy)) then	-- Inimigo fora de vis?o
 		MyState = IDLE_ST
 		TraceAI ("ATTACK_ST -> IDLE_ST")
 		return 
 	end
 
-	if (MOTION_DEAD == GetV(V_MOTION,MyEnemy)) then   -- ENEMY_DEAD_IN
+	if (MOTION_DEAD == GetV(V_MOTION,MyEnemy)) then   -- Inimigo morto
 		MyState = IDLE_ST
 		TraceAI ("ATTACK_ST -> IDLE_ST")
 		return
 	end
 		
-	if (false == IsInAttackSight(MyID,MyEnemy)) then  -- ENEMY_OUTATTACKSIGHT_IN
+	if (false == IsInAttackSight(MyID,MyEnemy)) then  -- Inimigo fora do alcance de ataque
 		MyState = CHASE_ST
 		MyDestX, MyDestY = GetV(V_POSITION_APPLY_SKILLATTACKRANGE, MyEnemy, MySkill, MySkillLevel)
 		Move (MyID,MyDestX,MyDestY)
-		TraceAI ("ATTACK_ST -> CHASE_ST  : ENEMY_OUTATTACKSIGHT_IN")
+		TraceAI ("ATTACK_ST -> CHASE_ST  : INIMIGO_FORA_DO_ALCANCE")
 		return
 	end
 	
@@ -342,7 +363,7 @@ function	OnATTACK_ST ()
 		
 		MySkill = 0
 	end
-	TraceAI ("ATTACK_ST -> ATTACK_ST  : ENERGY_RECHARGED_IN")
+	TraceAI ("ATTACK_ST -> ATTACK_ST  : ATACANDO")
 	return
 
 
@@ -355,7 +376,7 @@ function	OnMOVE_CMD_ST ()
 	TraceAI ("OnMOVE_CMD_ST")
 
 	local x, y = GetV (V_POSITION,MyID)
-	if (x == MyDestX and y == MyDestY) then				-- DESTINATION_ARRIVED_IN
+	if (x == MyDestX and y == MyDestY) then				-- Chegou ao destino
 		MyState = IDLE_ST
 	end
 end
@@ -385,14 +406,14 @@ function OnATTACK_AREA_CMD_ST ()
 		object = GetMyEnemy (MyID) 
 	end
 
-	if (object ~= 0) then							-- MYOWNER_ATTACKED_IN or ATTACKED_IN
+	if (object ~= 0) then							-- Mestre atacado ou inimigo encontrado
 		MyState = CHASE_ST
 		MyEnemy = object
 		return
 	end
 
 	local x , y = GetV (V_POSITION,MyID)
-	if (x == MyDestX and y == MyDestY) then			-- DESTARRIVED_IN
+	if (x == MyDestX and y == MyDestY) then			-- Chegou ao destino
 			MyState = IDLE_ST
 	end
 
@@ -409,15 +430,15 @@ function OnPATROL_CMD_ST ()
 		object = GetMyEnemy (MyID) 
 	end
 
-	if (object ~= 0) then							-- MYOWNER_ATTACKED_IN or ATTACKED_IN
+	if (object ~= 0) then							-- Mestre atacado ou inimigo encontrado
 		MyState = CHASE_ST
 		MyEnemy = object
-		TraceAI ("PATROL_CMD_ST -> CHASE_ST : ATTACKED_IN")
+		TraceAI ("PATROL_CMD_ST -> CHASE_ST : INIMIGO_ENCONTRADO")
 		return
 	end
 
 	local x , y = GetV (V_POSITION,MyID)
-	if (x == MyDestX and y == MyDestY) then			-- DESTARRIVED_IN
+	if (x == MyDestX and y == MyDestY) then			-- Chegou ao destino, inverte os pontos de patrulha
 		MyDestX = MyPatrolX
 		MyDestY = MyPatrolY
 		MyPatrolX = x
@@ -470,7 +491,7 @@ function OnSKILL_AREA_CMD_ST ()
 	TraceAI ("OnSKILL_AREA_CMD_ST")
 
 	local x , y = GetV (V_POSITION,MyID)
-	if (GetDistance(x,y,MyDestX,MyDestY) <= GetV(V_SKILLATTACKRANGE_LEVEL, MyID, MySkill, MySkillLevel)) then	-- DESTARRIVED_IN
+	if (GetDistance(x,y,MyDestX,MyDestY) <= GetV(V_SKILLATTACKRANGE_LEVEL, MyID, MySkill, MySkillLevel)) then	-- Chegou ao alcance da habilidade
 		SkillGround (MyID,MySkillLevel,MySkill,MyDestX,MyDestY)
 		MyState = IDLE_ST
 		MySkill = 0
@@ -485,25 +506,25 @@ function OnFOLLOW_CMD_ST ()
 	TraceAI ("OnFOLLOW_CMD_ST")
 
 	local ownerX, ownerY, myX, myY
-	ownerX, ownerY = GetV (V_POSITION,GetV(V_OWNER,MyID)) -- 주인
-	myX, myY = GetV (V_POSITION,MyID)					  -- 나 
+	ownerX, ownerY = GetV (V_POSITION,GetV(V_OWNER,MyID)) -- Posi??o do Mestre
+	myX, myY = GetV (V_POSITION,MyID)					 -- Minha Posi??o
 	
 	local d = GetDistance (ownerX,ownerY,myX,myY)
 
-	if ( d <= 3) then									  -- 3셀 이하 거리면 
+	if ( d <= 3) then									  -- Se a dist?ncia for 3 c?lulas ou menos
 		return 
 	end
 
 	local motion = GetV (V_MOTION,MyID)
-	if (motion == MOTION_MOVE) then                       -- 이동중
+	if (motion == MOTION_MOVE) then                       -- Se estiver se movendo
 		d = GetDistance (ownerX, ownerY, MyDestX, MyDestY)
-		if ( d > 3) then                                  -- 목적지 변경 ?
+		if ( d > 3) then                                  -- O destino mudou? (Mestre se moveu para longe do meu destino)
 			MoveToOwner (MyID)
 			MyDestX = ownerX
 			MyDestY = ownerY
 			return
 		end
-	else                                                  -- 다른 동작 
+	else                                                  -- Se estiver parado ou em outra a??o
 		MoveToOwner (MyID)
 		MyDestX = ownerX
 		MyDestY = ownerY
@@ -512,7 +533,52 @@ function OnFOLLOW_CMD_ST ()
 	
 end
 
+---------------------------------------------------
+-- NOVAS FUN??ES: Fun??es auxiliares para Anti-KS e Prioridade
+---------------------------------------------------
 
+-- Fun??o para verificar se um elemento existe em uma tabela
+function table.contains(tbl, element)
+    for _, value in pairs(tbl) do
+        if value == element then
+            return true
+        end
+    end
+    return false
+end
+
+-- Fun??o para verificar se um alvo est? sendo atacado por outro jogador (Anti-KS)
+function IsTargetedByOtherPlayer(target_id, my_id, owner_id)
+    local actors = GetActors()
+    for _, actor_id in ipairs(actors) do
+        -- Ignora o hom?nculo, seu mestre e monstros
+        if actor_id ~= my_id and actor_id ~= owner_id and IsMonster(actor_id) == 0 then
+            if (GetV(V_TARGET, actor_id) == target_id) then
+				-- Alvo j? est? sendo atacado por outro jogador
+                return true 
+            end
+        end
+    end
+    return false
+end
+
+-- Fun??o para encontrar o inimigo mais pr?ximo em uma lista fornecida
+function FindClosestEnemy(myid, enemy_list)
+    local result = 0
+    local min_dis = 100 -- Dist?ncia m?xima de busca
+    local dis
+
+    for _, enemy_id in ipairs(enemy_list) do
+        dis = GetDistance2(myid, enemy_id)
+        if (dis < min_dis) then
+            result = enemy_id
+            min_dis = dis
+        end
+    end
+    return result
+end
+
+---------------------------------------------------
 
 function	GetOwnerEnemy (myid)
 	local result = 0
@@ -558,8 +624,10 @@ function	GetMyEnemy (myid)
 	local result = 0
 
 	local type = GetV (V_HOMUNTYPE,myid)
+	-- Hom?nculos N?o-Agressivos (passivos, s? atacam se atacados)
 	if (type == LIF or type == LIF_H or type == AMISTR or type == AMISTR_H or type == LIF2 or type == LIF_H2 or type == AMISTR2 or type == AMISTR_H2) then
 		result = GetMyEnemyA (myid)
+	-- Hom?nculos Agressivos (atacam por conta pr?pria)
 	elseif (type == FILIR or type == FILIR_H or type == VANILMIRTH or type == VANILMIRTH_H or type == FILIR2 or type == FILIR_H2 or type == VANILMIRTH2 or type == VANILMIRTH_H2) then
 		result = GetMyEnemyB (myid)
 	end
@@ -568,9 +636,8 @@ end
 
 
 
-
 -------------------------------------------
---  비선공형 GetMyEnemy
+--  MODIFICADO: GetMyEnemy para hom?nculos N?o-Agressivos
 -------------------------------------------
 function	GetMyEnemyA (myid)
 	local result = 0
@@ -589,17 +656,8 @@ function	GetMyEnemyA (myid)
 		end
 	end
 
-	local min_dis = 100
-	local dis
-	for i,v in ipairs(enemys) do
-		dis = GetDistance2 (myid,v)
-		if (dis < min_dis) then
-			result = v
-			min_dis = dis
-		end
-	end
-
-	return result
+	-- Encontra o inimigo mais pr?ximo da lista de quem o atacou
+	return FindClosestEnemy(myid, enemys)
 end
 
 
@@ -607,18 +665,21 @@ end
 
 
 -------------------------------------------
---  선공형 GetMyEnemy
+--  MODIFICADO: GetMyEnemy para hom?nculos Agressivos (com Anti-KS e Prioridade)
 -------------------------------------------
 function	GetMyEnemyB (myid)
-	local result = 0
-	local owner  = GetV (V_OWNER,myid)
-	local actors = GetActors ()
+	local owner  = GetV(V_OWNER, myid)
+	local actors = GetActors()
+
+	-- Listas para cada n?vel de prioridade
 	local enemys = {}
 	local index = 1
-	local type
-	for i,v in ipairs(actors) do
-		if (v ~= owner and v ~= myid) then
-			if (1 == IsMonster(v))	then
+
+	for _, v in ipairs(actors) do
+		-- Verifica se ? um monstro v?lido
+		if (v ~= owner and v ~= myid and IsMonster(v) == 1) then
+			-- IMPLEMENTA??O ANTI-KS: Verifica se outro jogador j? est? atacando este monstro
+			if not IsTargetedByOtherPlayer(v, myid, owner) then
 				enemys[index] = v
 				index = index+1
 			end
@@ -643,23 +704,23 @@ end
 function AI(myid)
 
 	MyID = myid
-	local msg	= GetMsg (myid)			-- command
-	local rmsg	= GetResMsg (myid)		-- reserved command
+	local msg	= GetMsg (myid)			-- Comando atual
+	local rmsg	= GetResMsg (myid)		-- Comando reservado (enfileirado)
 
 	
 	if msg[1] == NONE_CMD then
 		if rmsg[1] ~= NONE_CMD then
 			if List.size(ResCmdList) < 10 then
-				List.pushright (ResCmdList,rmsg) -- 예약 명령 저장
+				List.pushright (ResCmdList,rmsg) -- Salva o comando reservado na fila
 			end
 		end
 	else
-		List.clear (ResCmdList)	-- 새로운 명령이 입력되면 예약 명령들은 삭제한다.  
-		ProcessCommand (msg)	-- 명령어 처리 
+		List.clear (ResCmdList)	-- Se um novo comando for recebido, limpa a fila de comandos reservados.
+		ProcessCommand (msg)	-- Processa o novo comando
 	end
 
 		
-	-- 상태 처리 
+	-- Processamento de Estado
  	if (MyState == IDLE_ST) then
 		OnIDLE_ST ()
 	elseif (MyState == CHASE_ST) then					
