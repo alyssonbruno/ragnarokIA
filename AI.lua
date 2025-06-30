@@ -21,26 +21,24 @@ FOLLOW_CMD_ST			= 12 -- Comando de Seguir
 
 
 ------------------------------------------
--- Vari?veis Globais
+-- Globais
 ------------------------------------------
-MyState				= IDLE_ST	-- O estado inicial ? ocioso
+MyState				= IDLE_ST	-- O estado inicial
 MyEnemy				= 0		-- ID do inimigo
 MyDestX				= 0		-- Coordenada X de destino
 MyDestY				= 0		-- Coordenada Y de destino
 MyPatrolX			= 0		-- Coordenada X de destino da patrulha
 MyPatrolY			= 0		-- Coordenada Y de destino da patrulha
 ResCmdList			= List.new()	-- Lista de comandos reservados (enfileirados)
-MyID				= 0		-- ID do hom?nculo
-MySkill				= 0		-- Habilidade do hom?nculo a ser usada
-MySkillLevel		= 0		-- N?vel da habilidade do hom?nculo
+MyID				= 0		-- ID do homunculo
+MySkill				= 0		-- Habilidade a ser usada
+MySkillLevel		= 0		-- Nivel Habilidade
 ------------------------------------------
 
 ---------------------------------------------------
--- NOVA IMPLEMENTA??O: Tabelas de Prioridade de Alvos
+-- Tabelas de Prioridade de Alvos
 ---------------------------------------------------
 -- Preencha as tabelas abaixo com os IDs dos monstros.
--- O hom?nculo ir? procurar primeiro na tabela 'prioritario', depois na 'normal', e por ?ltimo na 'ultimo_caso'.
--- NOTA: Assumindo que GetV(V_TYPE, id) retorna o ID do tipo do monstro. Se for por nome, a l?gica precisa ser adaptada.
 TARGET_PRIORITY = {
     prioritario = { 
         -- Ex: {1002, 1004} -- Monstros de alta prioridade (MVPs, etc.)
@@ -650,9 +648,6 @@ function AI(myid)
 		List.clear (ResCmdList)
 		ProcessCommand (msg)
 	end
-
-		
-	-- Processamento de Estado
  	if (MyState == IDLE_ST) then
 		OnIDLE_ST ()
 	elseif (MyState == CHASE_ST) then					
