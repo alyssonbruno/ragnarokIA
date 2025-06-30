@@ -1,6 +1,6 @@
 dofile("./AI/USER_AI/Const.lua")
 dofile("./AI/USER_AI/Util.lua")
-
+dofile("./AI/USER_AI/Patrulha.lua")
 -----------------------------
 -- Estados da IA
 -----------------------------
@@ -250,7 +250,11 @@ function	OnIDLE_ST ()
 		TraceAI ("IDLE_ST -> FOLLOW_ST")
 		return
 	end
-
+	
+	if MyID ~= nil and MyOwner ~= nil then
+		ExecutarPatrulhaUrbana(MyID, MyOwner)
+		return
+	end
 end
 
 
@@ -393,7 +397,8 @@ end
 
 
 function OnPATROL_CMD_ST ()
-
+ --[[
+ 
 	TraceAI ("OnPATROL_CMD_ST")
 
 	local	object = GetOwnerEnemy (MyID)
@@ -416,6 +421,7 @@ function OnPATROL_CMD_ST ()
 		MyPatrolY = y
 		Move (MyID,MyDestX,MyDestY)
 	end
+	--]]
 
 end
 
@@ -575,7 +581,7 @@ function	GetMyEnemy (myid)
 
 	local type = GetV (V_HOMUNTYPE,myid)
 	if (EVERYBODY_AGRESSIVE == 1) or (type == FILIR or type == FILIR_H or type == VANILMIRTH or type == VANILMIRTH_H or type == FILIR2 or type == FILIR_H2 or type == VANILMIRTH2 or type == VANILMIRTH_H2) then
-		result = GetMyEnemy (myid)
+		result = GetMyEnemyAgressive (myid)
 	elseif (type == LIF or type == LIF_H or type == AMISTR or type == AMISTR_H or type == LIF2 or type == LIF_H2 or type == AMISTR2 or type == AMISTR_H2)  then
 		result = GetMyEnemyNotAgressive (myid)
 	end
@@ -602,7 +608,7 @@ function	GetMyEnemyNotAgressive (myid)
 	return FindClosestEnemy(myid, enemys)
 end
 
-function	GetMyEnemy (myid)
+function	GetMyEnemyAgressive (myid)
 	local owner  = GetV(V_OWNER, myid)
 	local actors = GetActors()
 
@@ -634,9 +640,10 @@ end
 function AI(myid)
 
 	MyID = myid
+	MyOwner = GetV(V_OWNER,myid)
 	local msg	= GetMsg (myid)
 	local rmsg	= GetResMsg (myid)
-
+	TraceAI("Incício do AI: " .. myid .. " - " .. os.date())
 	
 	if msg[1] == NONE_CMD then
 		if rmsg[1] ~= NONE_CMD then

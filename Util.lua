@@ -72,9 +72,6 @@ function	GetDistance (x1,y1,x2,y2)
 	return math.floor(math.sqrt((x1-x2)^2+(y1-y2)^2))
 end
 
-
-
-
 function	GetDistanceById (id1, id2)
 	local x1, y1 = GetV (V_POSITION,id1)
 	local x2, y2 = GetV (V_POSITION,id2)
@@ -84,16 +81,9 @@ function	GetDistanceById (id1, id2)
 	return GetDistance (x1,y1,x2,y2)
 end
 
-
-
-
 function	GetOwnerPosition (id)
 	return GetV (V_POSITION,GetV(V_OWNER,id))
 end
-
-
-
-
 
 function	GetDistanceFromOwner (id)
 	--[[ local x1, y1 = GetOwnerPosition (id)
