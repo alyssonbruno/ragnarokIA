@@ -1,4 +1,4 @@
-dofile("./AI/Const.lua")
+dofile("./AI/USER_AI/Const.lua")
 
 
 --------------------------------------------
@@ -68,13 +68,6 @@ function List.size (list)
 end
 
 -------------------------------------------------
-
-
-
-
-
-
-
 function	GetDistance (x1,y1,x2,y2)
 	return math.floor(math.sqrt((x1-x2)^2+(y1-y2)^2))
 end
@@ -82,7 +75,7 @@ end
 
 
 
-function	GetDistance2 (id1, id2)
+function	GetDistanceById (id1, id2)
 	local x1, y1 = GetV (V_POSITION,id1)
 	local x2, y2 = GetV (V_POSITION,id2)
 	if (x1 == -1 or x2 == -1) then
@@ -103,25 +96,31 @@ end
 
 
 function	GetDistanceFromOwner (id)
-	local x1, y1 = GetOwnerPosition (id)
+	--[[ local x1, y1 = GetOwnerPosition (id)
 	local x2, y2 = GetV (V_POSITION,id)
 	if (x1 == -1 or x2 == -1) then
 		return -1
 	end
 	return GetDistance (x1,y1,x2,y2)
+	--]]
+	return GetDistanceById (id, GetV(V_OWNER,id))
 end
 
 
 
 
 function	IsOutOfSight (id1,id2)
-	local x1,y1 = GetV (V_POSITION,id1)
-	local x2,y2 = GetV (V_POSITION,id2)
+	--[[if id1 == nil or id2 == nil then
+		return false
+	end
+	--]]
+	local x1, y1 = GetV (V_POSITION,id1)
+	local x2, y2 = GetV (V_POSITION,id2)
 	if (x1 == -1 or x2 == -1) then
 		return true
 	end
 	local d = GetDistance (x1,y1,x2,y2)
-	if d > 20 then
+	if d > MAX_DISTANCE then
 		return true
 	else
 		return false
@@ -133,6 +132,10 @@ end
 
 
 function	IsInAttackSight (id1,id2)
+	--[[ if id1 == nil or id2 == nil then
+		return false
+	end
+	--]]
 	local x1,y1 = GetV (V_POSITION,id1)
 	local x2,y2 = GetV (V_POSITION,id2)
 	if (x1 == -1 or x2 == -1) then
