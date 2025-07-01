@@ -15,6 +15,7 @@ function ExecutarPatrulhaUrbana(myID, ownerID)
 
     local ownerX, ownerY = GetV(V_POSITION, ownerID)
     if ownerX == -1 then return end -- Checagem de segurança
+    if GetTick() < proximoMovimento then return end -- Verifica se é hora de mover
 
     -- Gera um ângulo e uma distância aleatórios para um movimento mais natural.
     local angulo = math.random() * 2 * math.pi

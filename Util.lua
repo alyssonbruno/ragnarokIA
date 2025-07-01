@@ -69,21 +69,31 @@ end
 
 -------------------------------------------------
 function	GetDistance (x1,y1,x2,y2)
+	if (x1 == -1 or x2 == -1) or (x1 == nil or x2 == nil) then
+		return -1
+	end
 	return math.floor(math.sqrt((x1-x2)^2+(y1-y2)^2))
 end
 
 function	GetDistanceById (id1, id2)
+	if (id1 == nil or id2 == nil) then
+		return -1
+	end
+
 	local x1, y1 = GetV (V_POSITION,id1)
 	local x2, y2 = GetV (V_POSITION,id2)
+
 	if (x1 == -1 or x2 == -1) then
 		return -1
 	end
 	return GetDistance (x1,y1,x2,y2)
 end
 
+--[[
 function	GetOwnerPosition (id)
 	return GetV (V_POSITION,GetV(V_OWNER,id))
 end
+--]]
 
 function	GetDistanceFromOwner (id)
 	--[[ local x1, y1 = GetOwnerPosition (id)
@@ -95,9 +105,6 @@ function	GetDistanceFromOwner (id)
 	--]]
 	return GetDistanceById (id, GetV(V_OWNER,id))
 end
-
-
-
 
 function	IsOutOfSight (id1,id2)
 	--[[if id1 == nil or id2 == nil then
@@ -116,10 +123,6 @@ function	IsOutOfSight (id1,id2)
 		return false
 	end
 end
-
-
-
-
 
 function	IsInAttackSight (id1,id2)
 	--[[ if id1 == nil or id2 == nil then

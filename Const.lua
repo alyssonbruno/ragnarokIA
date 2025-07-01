@@ -171,9 +171,10 @@ FOLLOW_CMD
 --]]
 
 EVERYBODY_AGRESSIVE = 1
-MAX_DISTANCE_FROM_OWNER = 4
+MAX_DISTANCE_FROM_OWNER = 8
+MIN_DISTANCE_FROM_OWNER = 2
 MAX_DISTANCE = 20
 
 RAIO_PATRULHA = MAX_DISTANCE_FROM_OWNER -- Distância máxima em células que o Homunculus andará do mestre.
 TEMPO_ESPERA_MIN = 1000 -- Tempo mínimo em milissegundos para esperar antes de um novo movimento.
-TEMPO_ESPERA_MAX = 2000 -- Tempo máximo em milissegundos para esperar antes de um novo movimento.
+TEMPO_ESPERA_MAX = 5000 -- Tempo máximo em milissegundos para esperar antes de um novo movimento.

@@ -476,7 +476,7 @@ function OnFOLLOW_CMD_ST ()
 	local owner = GetV(V_OWNER,MyID)
 	local d = GetDistance (owner,MyID)
 
-	if ( d <= MAX_DISTANCE_FROM_OWNER) then
+	if ( d <= MIN_DISTANCE_FROM_OWNER) then
 		return 
 	end
 
@@ -614,6 +614,7 @@ function	GetMyEnemyAgressive (myid)
 
 	local enemys = {}
 	local index = 1
+	local result = 0
 
 	for _, v in ipairs(actors) do
 		if (v ~= owner and v ~= myid and IsMonster(v) == 1) then
@@ -655,6 +656,7 @@ function AI(myid)
 		List.clear (ResCmdList)
 		ProcessCommand (msg)
 	end
+
  	if (MyState == IDLE_ST) then
 		OnIDLE_ST ()
 	elseif (MyState == CHASE_ST) then					
@@ -681,6 +683,8 @@ function AI(myid)
 		OnSKILL_AREA_CMD_ST ()
 	elseif (MyState == FOLLOW_CMD_ST) then
 		OnFOLLOW_CMD_ST ()
+	else
+		OnIDLE_ST() -- Fallback para IDLE_ST se o estado for desconhecido
 	end
 
 end
