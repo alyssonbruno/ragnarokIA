@@ -245,7 +245,7 @@ function	OnIDLE_ST ()
 	end
 
 	local distance = GetDistanceFromOwner(MyID)
-	if ( distance > MAX_DISTANCE_FROM_OWNER or distance == -1) then
+	if ( distance > MAX_DISTANCE_FROM_OWNER) then
 		MyState = FOLLOW_ST
 		TraceAI ("IDLE_ST -> FOLLOW_ST")
 		return
@@ -280,6 +280,14 @@ end
 function	OnCHASE_ST ()
 
 	TraceAI ("OnCHASE_ST")
+
+	local distance = GetDistanceFromOwner(MyID)
+	if ( distance > MAX_DISTANCE_FROM_OWNER) then
+		MyState = FOLLOW_ST
+		TraceAI ("CHASE_ST -> FOLLOW_ST")
+		return
+	end
+
 	if (MyEnemy == nil) or (true == IsOutOfSight(MyID,MyEnemy)) then	-- Inimigo fora de vis?o
 		MyState = IDLE_ST
 		MyEnemy = 0
@@ -308,7 +316,14 @@ end
 function	OnATTACK_ST ()
 
 	TraceAI ("OnATTACK_ST")
-	
+
+	local distance = GetDistanceFromOwner(MyID)
+	if ( distance > MAX_DISTANCE_FROM_OWNER) then
+		MyState = FOLLOW_ST
+		TraceAI ("ATTACK_ST -> FOLLOW_ST")
+		return
+	end
+
 	if (true == IsOutOfSight(MyID,MyEnemy)) then	-- Inimigo fora de vis?o
 		MyState = IDLE_ST
 		TraceAI ("ATTACK_ST -> IDLE_ST")
@@ -484,7 +499,7 @@ function OnFOLLOW_CMD_ST ()
 	local ownerX, ownerY = GetV (V_POSITION,owner)
 	if (motion == MOTION_MOVE) then
 		d = GetDistance (owner,MyID)
-		if ( d > MAX_DISTANCE_FROM_OWNER) then
+		if ( d > (MAX_DISTANCE_FROM_OWNER / 2) ) then -- segue quando estiver na metade da distância máxima
 			MoveToOwner (MyID)
 			MyDestX = ownerX
 			MyDestY = ownerY
